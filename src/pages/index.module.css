@@ -1,0 +1,47 @@
+/**
+ * CSS module for homepage
+ */
+
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.features {
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+.feature {
+  margin-bottom: 2rem;
+}
+
+.feature h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.feature p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--ifm-color-emphasis-700);
+}

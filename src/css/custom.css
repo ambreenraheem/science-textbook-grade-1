@@ -1,0 +1,118 @@
+/**
+ * Custom CSS for Science Textbook Grade-1
+ * Child-friendly, colorful, and engaging design
+ */
+
+:root {
+  /* Primary colors - bright and cheerful */
+  --ifm-color-primary: #4CAF50;
+  --ifm-color-primary-dark: #45a049;
+  --ifm-color-primary-darker: #409042;
+  --ifm-color-primary-darkest: #357a38;
+  --ifm-color-primary-light: #66BB6A;
+  --ifm-color-primary-lighter: #81C784;
+  --ifm-color-primary-lightest: #A5D6A7;
+
+  /* Font sizes - larger for young readers */
+  --ifm-font-size-base: 18px;
+  --ifm-line-height-base: 1.8;
+  --ifm-heading-font-weight: 700;
+
+  /* Spacing */
+  --ifm-spacing-horizontal: 2rem;
+  --ifm-spacing-vertical: 2rem;
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] {
+  --ifm-color-primary: #66BB6A;
+  --ifm-background-color: #1e1e1e;
+  --ifm-font-color-base: #f0f0f0;
+}
+
+/* Make content more readable for children */
+.markdown {
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.markdown h1 {
+  font-size: 2.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown h2 {
+  font-size: 2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.markdown h3 {
+  font-size: 1.5rem;
+  margin-top: 1.2rem;
+  margin-bottom: 0.6rem;
+}
+
+/* Add colorful borders to content blocks */
+.markdown blockquote {
+  border-left: 4px solid var(--ifm-color-primary);
+  background-color: rgba(76, 175, 80, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+/* Style for educational notes */
+.admonition {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 1.5rem 0;
+}
+
+/* Larger, more clickable buttons for children */
+.button {
+  font-size: 1.2rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* Sidebar styling */
+.menu__link {
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.menu__link--active {
+  background-color: var(--ifm-color-primary-lightest);
+  font-weight: 600;
+}
+
+/* Footer styling */
+.footer {
+  padding: 2rem 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Responsive design for tablets (primary target) */
+@media (max-width: 996px) {
+  :root {
+    --ifm-font-size-base: 20px;
+  }
+
+  .markdown h1 {
+    font-size: 2.2rem;
+  }
+
+  .markdown h2 {
+    font-size: 1.8rem;
+  }
+}
+
+/* RTL support for Urdu */
+[dir='rtl'] .markdown {
+  text-align: right;
+  font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif;
+}

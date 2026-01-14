@@ -1,0 +1,20 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simple science-themed logo with microscope icon -->
+  <circle cx="100" cy="100" r="90" fill="#4CAF50" opacity="0.1"/>
+  <g transform="translate(50, 40)">
+    <!-- Microscope base -->
+    <rect x="30" y="140" width="40" height="10" fill="#2E7D32" rx="2"/>
+    <!-- Microscope body -->
+    <rect x="45" y="120" width="10" height="20" fill="#388E3C" rx="2"/>
+    <!-- Microscope arm -->
+    <path d="M 50 120 L 50 80 L 70 60" stroke="#388E3C" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <!-- Microscope eyepiece -->
+    <circle cx="50" cy="70" r="8" fill="#66BB6A"/>
+    <!-- Microscope objective -->
+    <circle cx="70" cy="60" r="6" fill="#43A047"/>
+    <!-- Stage -->
+    <rect x="35" y="100" width="30" height="5" fill="#388E3C" rx="1"/>
+  </g>
+  <!-- Text -->
+  <text x="100" y="190" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#2E7D32" text-anchor="middle">Science Grade-1</text>
+</svg>

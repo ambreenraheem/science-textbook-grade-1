@@ -1,0 +1,150 @@
+// Prisma Schema for Grade-1 Science Learning Web Application
+// Database: Neon PostgreSQL
+// Generated: 2026-01-14
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// User Management (Adults only - COPPA compliant)
+// ============================================================================
+
+model User {
+  id         String    @id @default(uuid()) @db.Uuid
+  email      String    @unique @db.VarChar(255)
+  role       Role
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastLogin  DateTime? @map("last_login")
+
+  // Relationships
+  managedStudents Student[] @relation("ParentStudents")
+
+  @@index([role])
+  @@map("users")
+}
+
+enum Role {
+  admin
+  teacher
+  parent
+  student
+}
+
+// ============================================================================
+// Student Profiles (Children - linked to parents, no independent auth)
+// ============================================================================
+
+model Student {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid // Future: student login
+  displayName String   @map("display_name") @db.VarChar(50)
+  grade       Int      @db.Integer
+  parentId    String   @map("parent_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  parent   User       @relation("ParentStudents", fields: [parentId], references: [id], onDelete: Cascade)
+  progress Progress[]
+
+  @@index([parentId, grade])
+  @@map("students")
+}
+
+// ============================================================================
+// Content Structure (Topics → Lessons)
+// ============================================================================
+
+model Topic {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  orderIndex  Int      @map("order_index") @db.Integer
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  lessons Lesson[]
+
+  @@index([orderIndex])
+  @@map("topics")
+}
+
+model Lesson {
+  id          String   @id @default(uuid()) @db.Uuid
+  topicId     String   @map("topic_id") @db.Uuid
+  title       String   @db.VarChar(100)
+  contentPath String   @unique @map("content_path") @db.VarChar(255)
+  orderIndex  Int      @map("order_index") @db.Integer
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  topic    Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  videos   Video[]
+  progress Progress[]
+
+  @@index([topicId, orderIndex])
+  @@map("lessons")
+}
+
+// ============================================================================
+// Progress Tracking (Student completion & scores)
+// ============================================================================
+
+model Progress {
+  studentId   String    @map("student_id") @db.Uuid
+  lessonId    String    @map("lesson_id") @db.Uuid
+  completed   Boolean   @default(false)
+  score       Int?      @db.Integer
+  completedAt DateTime? @map("completed_at")
+
+  // Relationships
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson  Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, lessonId])
+  @@index([studentId, completed])
+  @@map("progress")
+}
+
+// ============================================================================
+// Educational Videos (Curated & educator-verified only)
+// ============================================================================
+
+model Video {
+  id            String   @id @default(uuid()) @db.Uuid
+  lessonId      String   @map("lesson_id") @db.Uuid
+  youtubeId     String   @map("youtube_id") @db.VarChar(20)
+  title         String   @db.VarChar(200)
+  verifiedSafe  Boolean  @default(false) @map("verified_safe")
+  educatorNotes String?  @map("educator_notes") @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId, verifiedSafe])
+  @@index([verifiedSafe])
+  @@map("videos")
+}
+
+// ============================================================================
+// Chat Logs (Anonymized - NO PII, NO raw transcripts, COPPA compliant)
+// ============================================================================
+
+model ChatLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  sessionId       String   @map("session_id") @db.Uuid
+  timestamp       DateTime @default(now())
+  safeQueryHash   String   @map("safe_query_hash") @db.Char(64)
+  responseLength  Int      @map("response_length") @db.Integer
+
+  @@index([sessionId])
+  @@index([timestamp])
+  @@map("chat_logs")
+}

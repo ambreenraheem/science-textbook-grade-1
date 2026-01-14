@@ -1,0 +1,745 @@
+openapi: 3.0.3
+info:
+  title: Grade-1 Science Learning Web Application API
+  description: |
+    RESTful API for child-safe educational platform serving Grade-1 students (ages 6-7).
+    Implements COPPA-compliant authentication, progress tracking, AI chatbot, and content curation.
+  version: 1.0.0
+  contact:
+    name: Science Textbook Grade-1 Team
+
+servers:
+  - url: https://science-grade1.vercel.app/api
+    description: Production
+  - url: http://localhost:3000/api
+    description: Local development
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      summary: Authenticate parent/teacher/admin user
+      description: Login with email and password, returns session token
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "parent@example.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT session token
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /auth/logout:
+    post:
+      summary: End user session
+      description: Invalidate current session token
+      tags: [Authentication]
+      responses:
+        '204':
+          description: Successfully logged out
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Content Endpoints (Public)
+  /content/topics:
+    get:
+      summary: List all science topics
+      description: Returns all 5 Grade-1 science topics in order
+      tags: [Content]
+      security: []
+      parameters:
+        - name: locale
+          in: query
+          schema:
+            type: string
+            enum: [en, ur]
+            default: en
+          description: Language for content
+      responses:
+        '200':
+          description: List of topics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Topic'
+
+  /content/lessons/{lessonId}:
+    get:
+      summary: Get lesson content
+      description: Returns lesson details with MDX content path and verified videos
+      tags: [Content]
+      security: []
+      parameters:
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: locale
+          in: query
+          schema:
+            type: string
+            enum: [en, ur]
+            default: en
+      responses:
+        '200':
+          description: Lesson content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Progress Endpoints (Authenticated)
+  /progress/{studentId}:
+    get:
+      summary: Get student progress
+      description: Returns all progress records for a student (parent/teacher view)
+      tags: [Progress]
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Student progress
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Progress'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /progress/update:
+    post:
+      summary: Update lesson progress
+      description: Mark lesson complete or update quiz score
+      tags: [Progress]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [studentId, lessonId, completed, score]
+              properties:
+                studentId:
+                  type: string
+                  format: uuid
+                lessonId:
+                  type: string
+                  format: uuid
+                completed:
+                  type: boolean
+                score:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+                  description: Quiz score percentage
+      responses:
+        '200':
+          description: Progress updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Progress'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # Chatbot Endpoint
+  /chat/message:
+    post:
+      summary: Send message to AI chatbot
+      description: |
+        Streams AI chatbot response with safety filters.
+        Pre-filters: profanity, PII, inappropriate topics.
+        Post-filters: OpenAI moderation, link removal, reading level validation.
+        Rate limit: 10 messages per session.
+      tags: [Chat]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message, locale, sessionId]
+              properties:
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                  description: Student's question (pre-filtered before API call)
+                locale:
+                  type: string
+                  enum: [en, ur]
+                  description: Response language
+                sessionId:
+                  type: string
+                  format: uuid
+                  description: Ephemeral session ID (not linked to student_id)
+                lessonContext:
+                  type: string
+                  description: Current lesson slug for context
+      responses:
+        '200':
+          description: Streaming response
+          content:
+            text/event-stream:
+              schema:
+                type: object
+                properties:
+                  chunk:
+                    type: string
+                    description: Partial response chunk
+                  done:
+                    type: boolean
+                    description: Whether streaming is complete
+        '400':
+          description: Message blocked by safety filter
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Let's keep our questions about science!"
+                  filtered:
+                    type: boolean
+                    example: true
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "You've asked lots of great questions! Take a break and try again soon."
+                  retryAfter:
+                    type: integer
+                    description: Seconds until rate limit resets
+
+  # Admin Endpoints (Admin Role Required)
+  /admin/videos:
+    post:
+      summary: Submit video for curation
+      description: Admin submits YouTube video URL for review
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lessonId, youtubeUrl, title]
+              properties:
+                lessonId:
+                  type: string
+                  format: uuid
+                youtubeUrl:
+                  type: string
+                  format: uri
+                  example: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                educatorNotes:
+                  type: string
+                  description: Internal review notes
+      responses:
+        '201':
+          description: Video submitted for review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    get:
+      summary: List videos for curation
+      description: Get all videos (filter by verified_safe status)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: verifiedSafe
+          in: query
+          schema:
+            type: boolean
+          description: Filter by verification status (null = all)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: List of videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Video'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/videos/{videoId}:
+    patch:
+      summary: Update video verification status
+      description: Mark video as verified_safe or remove from lessons
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: videoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [verifiedSafe]
+              properties:
+                verifiedSafe:
+                  type: boolean
+                  description: Set to false to remove from student view
+                educatorNotes:
+                  type: string
+                  description: Update internal notes
+      responses:
+        '200':
+          description: Video updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/chat-logs:
+    get:
+      summary: Review anonymized chat logs
+      description: Get aggregated chat logs for safety review (no raw transcripts)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Anonymized chat logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatLog'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # Student Management (Parent/Teacher)
+  /students:
+    post:
+      summary: Create child profile
+      description: Parent creates child profile linked to their account
+      tags: [Students]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [displayName, grade]
+              properties:
+                displayName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                  description: First name only (no last names)
+                  example: "Ali"
+                grade:
+                  type: integer
+                  minimum: 1
+                  maximum: 1
+                  description: Must be 1 for Grade-1
+      responses:
+        '201':
+          description: Student profile created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    get:
+      summary: List parent's child profiles
+      description: Get all children linked to authenticated parent
+      tags: [Students]
+      responses:
+        '200':
+          description: List of children
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Student'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /students/{studentId}:
+    delete:
+      summary: Delete child profile
+      description: Parent deletes child profile (cascades to progress)
+      tags: [Students]
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Student profile deleted
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from /auth/login
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, teacher, parent, student]
+        createdAt:
+          type: string
+          format: date-time
+        lastLogin:
+          type: string
+          format: date-time
+
+    Student:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+          description: First name only
+          example: "Sarah"
+        grade:
+          type: integer
+          example: 1
+        parentId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    Topic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "Living and Non-living Things"
+        slug:
+          type: string
+          example: "01-living-nonliving"
+        description:
+          type: string
+          example: "Learn what makes something alive"
+        orderIndex:
+          type: integer
+          example: 1
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lesson'
+
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        topicId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "What Makes Something Alive?"
+        contentPath:
+          type: string
+          example: "topics/01-living-nonliving/what-is-alive.mdx"
+        orderIndex:
+          type: integer
+          example: 1
+
+    LessonDetail:
+      allOf:
+        - $ref: '#/components/schemas/Lesson'
+        - type: object
+          properties:
+            videos:
+              type: array
+              items:
+                type: object
+                properties:
+                  youtubeId:
+                    type: string
+                    example: "dQw4w9WgXcQ"
+                  title:
+                    type: string
+                    example: "What Are Living Things?"
+            quiz:
+              type: object
+              description: Quiz questions embedded in MDX (not from API)
+
+    Progress:
+      type: object
+      properties:
+        studentId:
+          type: string
+          format: uuid
+        lessonId:
+          type: string
+          format: uuid
+        completed:
+          type: boolean
+          example: true
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 85
+        completedAt:
+          type: string
+          format: date-time
+        lesson:
+          $ref: '#/components/schemas/Lesson'
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        lessonId:
+          type: string
+          format: uuid
+        youtubeId:
+          type: string
+          example: "dQw4w9WgXcQ"
+        title:
+          type: string
+          example: "What Are Living Things?"
+        verifiedSafe:
+          type: boolean
+          example: true
+        educatorNotes:
+          type: string
+          example: "Excellent video, age-appropriate, from Khan Academy Kids"
+        createdAt:
+          type: string
+          format: date-time
+
+    ChatLog:
+      type: object
+      description: Anonymized log entry (NO raw transcripts)
+      properties:
+        id:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+          description: Ephemeral session (not linked to user)
+        timestamp:
+          type: string
+          format: date-time
+        safeQueryHash:
+          type: string
+          description: SHA-256 hash of sanitized query
+          example: "a3f5c1b2..."
+        responseLength:
+          type: integer
+          description: Character count of response
+          example: 142
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Child-friendly error message
+        code:
+          type: string
+          description: Machine-readable error code
+        details:
+          type: object
+          description: Additional context (never technical stack traces)
+
+  responses:
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Oops! We need some more information."
+            code: "INVALID_INPUT"
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Please log in to continue."
+            code: "UNAUTHORIZED"
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "You don't have permission to do that."
+            code: "FORBIDDEN"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "We couldn't find what you're looking for."
+            code: "NOT_FOUND"
+
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "You're doing that too quickly. Please wait a moment."
+            code: "RATE_LIMITED"
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Content
+    description: Topics, lessons, and educational content (public)
+  - name: Progress
+    description: Student learning progress tracking
+  - name: Chat
+    description: AI chatbot with safety filters
+  - name: Admin
+    description: Content curation and safety moderation
+  - name: Students
+    description: Child profile management
