@@ -25,12 +25,12 @@ const sidebars = {
       label: '01. Living and Non-living Things',
       link: {
         type: 'doc',
-        id: 'topics/01-living-nonliving/index',
+        id: 'topics/living-nonliving/index',
       },
       items: [
-        'topics/01-living-nonliving/what-is-alive',
-        'topics/01-living-nonliving/nonliving-things',
-        'topics/01-living-nonliving/sorting-activity',
+        'topics/living-nonliving/what-is-alive',
+        'topics/living-nonliving/nonliving-things',
+        'topics/living-nonliving/sorting-activity',
       ],
     },
     {
@@ -38,12 +38,12 @@ const sidebars = {
       label: '02. Human Body and Senses',
       link: {
         type: 'doc',
-        id: 'topics/02-human-body-senses/index',
+        id: 'topics/human-body-senses/index',
       },
       items: [
-        'topics/02-human-body-senses/five-senses',
-        'topics/02-human-body-senses/body-parts',
-        'topics/02-human-body-senses/using-senses',
+        'topics/human-body-senses/five-senses',
+        'topics/human-body-senses/body-parts',
+        'topics/human-body-senses/using-senses',
       ],
     },
     {
@@ -51,13 +51,13 @@ const sidebars = {
       label: '03. Animals',
       link: {
         type: 'doc',
-        id: 'topics/03-animals/index',
+        id: 'topics/animals/index',
       },
       items: [
-        'topics/03-animals/animals-around-us',
-        'topics/03-animals/animal-homes',
-        'topics/03-animals/what-animals-eat',
-        'topics/03-animals/animal-sounds',
+        'topics/animals/animals-around-us',
+        'topics/animals/animal-homes',
+        'topics/animals/what-animals-eat',
+        'topics/animals/animal-sounds',
       ],
     },
     {
@@ -65,13 +65,13 @@ const sidebars = {
       label: '04. Plants',
       link: {
         type: 'doc',
-        id: 'topics/04-plants/index',
+        id: 'topics/plants/index',
       },
       items: [
-        'topics/04-plants/plant-parts',
-        'topics/04-plants/plants-need',
-        'topics/04-plants/types-of-plants',
-        'topics/04-plants/plants-help-us',
+        'topics/plants/plant-parts',
+        'topics/plants/plants-need',
+        'topics/plants/types-of-plants',
+        'topics/plants/plants-help-us',
       ],
     },
     {
@@ -79,13 +79,13 @@ const sidebars = {
       label: '05. Earth and Universe',
       link: {
         type: 'doc',
-        id: 'topics/05-earth-universe/index',
+        id: 'topics/earth-universe/index',
       },
       items: [
-        'topics/05-earth-universe/day-and-night',
-        'topics/05-earth-universe/sun-moon-stars',
-        'topics/05-earth-universe/weather-seasons',
-        'topics/05-earth-universe/our-planet-earth',
+        'topics/earth-universe/day-and-night',
+        'topics/earth-universe/sun-moon-stars',
+        'topics/earth-universe/weather-seasons',
+        'topics/earth-universe/our-planet-earth',
       ],
     },
   ],

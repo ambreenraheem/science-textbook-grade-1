@@ -97,4 +97,26 @@ const config = {
     }),
 };
 
+// Add webpack aliases for component imports
+const path = require('path');
+
+config.plugins = [
+  function customWebpackPlugin() {
+    return {
+      name: 'custom-webpack-plugin',
+      configureWebpack() {
+        return {
+          resolve: {
+            alias: {
+              '@components': path.resolve(__dirname, 'src/components'),
+              '@lib': path.resolve(__dirname, 'src/lib'),
+              '@api': path.resolve(__dirname, 'src/api'),
+            },
+          },
+        };
+      },
+    };
+  },
+];
+
 module.exports = config;
