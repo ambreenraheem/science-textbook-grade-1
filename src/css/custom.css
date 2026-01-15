@@ -116,3 +116,79 @@
   text-align: right;
   font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif;
 }
+
+/* Quiz component dark mode fixes */
+[data-theme='dark'] .quiz-container {
+  background-color: var(--ifm-background-color) !important;
+}
+
+[data-theme='dark'] .quiz-container button {
+  background-color: #2d2d2d !important;
+  color: #f0f0f0 !important;
+  border-color: #4a4a4a !important;
+}
+
+[data-theme='dark'] .quiz-container button:hover:not(:disabled) {
+  background-color: #3d3d3d !important;
+  border-color: var(--ifm-color-primary) !important;
+}
+
+[data-theme='dark'] .quiz-container button[style*="var(--ifm-color-primary-lightest)"] {
+  background-color: rgba(102, 187, 106, 0.2) !important;
+  border-color: var(--ifm-color-primary) !important;
+}
+
+/* Dark mode correct answer styling */
+[data-theme='dark'] .quiz-container button[style*="#e8f5e9"] {
+  background-color: rgba(76, 175, 80, 0.25) !important;
+  color: #81C784 !important;
+  border-color: #4caf50 !important;
+}
+
+/* Dark mode incorrect answer styling */
+[data-theme='dark'] .quiz-container button[style*="#ffebee"] {
+  background-color: rgba(244, 67, 54, 0.25) !important;
+  color: #ef9a9a !important;
+  border-color: #f44336 !important;
+}
+
+/* Dark mode feedback box - correct answer */
+[data-theme='dark'] .quiz-feedback-correct {
+  background-color: rgba(76, 175, 80, 0.2) !important;
+}
+
+[data-theme='dark'] .quiz-feedback-correct .quiz-feedback-title,
+[data-theme='dark'] .quiz-feedback-correct .quiz-feedback-explanation {
+  color: #a5d6a7 !important;
+}
+
+/* Dark mode feedback box - incorrect answer */
+[data-theme='dark'] .quiz-feedback-incorrect {
+  background-color: rgba(255, 152, 0, 0.2) !important;
+}
+
+[data-theme='dark'] .quiz-feedback-incorrect .quiz-feedback-title,
+[data-theme='dark'] .quiz-feedback-incorrect .quiz-feedback-explanation {
+  color: #ffcc80 !important;
+}
+
+/* Dark mode quiz complete screen */
+[data-theme='dark'] .quiz-complete {
+  background-color: var(--ifm-background-color) !important;
+  color: #f0f0f0 !important;
+}
+
+[data-theme='dark'] .quiz-complete[style*="#e8f5e9"] {
+  background-color: rgba(76, 175, 80, 0.15) !important;
+  border-color: #66BB6A !important;
+}
+
+[data-theme='dark'] .quiz-complete[style*="#fff3e0"] {
+  background-color: rgba(255, 152, 0, 0.15) !important;
+  border-color: #ff9800 !important;
+}
+
+[data-theme='dark'] .quiz-complete p,
+[data-theme='dark'] .quiz-complete h3 {
+  color: #f0f0f0 !important;
+}

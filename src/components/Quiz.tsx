@@ -190,6 +190,7 @@ export default function Quiz({ questions, lessonId, onComplete }: QuizProps): JS
       {/* Feedback */}
       {showFeedback && (
         <div
+          className={isCorrect ? 'quiz-feedback quiz-feedback-correct' : 'quiz-feedback quiz-feedback-incorrect'}
           style={{
             padding: '1rem',
             borderRadius: '8px',
@@ -198,11 +199,11 @@ export default function Quiz({ questions, lessonId, onComplete }: QuizProps): JS
             border: `2px solid ${isCorrect ? '#4caf50' : '#ff9800'}`,
           }}
         >
-          <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold' }}>
+          <p className="quiz-feedback-title" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold' }}>
             {isCorrect ? '✓ Correct!' : '✗ Not quite right.'}
           </p>
           {question.explanation && (
-            <p style={{ margin: '0.5rem 0 0 0', fontSize: '1rem' }}>{question.explanation}</p>
+            <p className="quiz-feedback-explanation" style={{ margin: '0.5rem 0 0 0', fontSize: '1rem' }}>{question.explanation}</p>
           )}
         </div>
       )}
