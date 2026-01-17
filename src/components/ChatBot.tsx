@@ -6,9 +6,11 @@
  * - Child-friendly interface
  * - Rate limiting (10 questions per session)
  * - Session-based (no PII tracking)
+ * - i18n support (English/Urdu)
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { getChatMessages, type Locale } from '../lib/i18n';
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -17,29 +19,39 @@ export interface Message {
 }
 
 export interface ChatBotProps {
-  /** Initial greeting message */
+  /** Initial greeting message (overrides i18n default) */
   greeting?: string;
   /** Maximum messages per session (default: 10) */
   maxMessages?: number;
   /** Callback when message limit reached */
   onLimitReached?: () => void;
+  /** Locale for messages - 'en' or 'ur' (default: 'en') */
+  locale?: Locale;
 }
 
 /**
  * Interactive AI chatbot for answering science questions
  */
 export default function ChatBot({
-  greeting = "Hi! I'm your science helper! Ask me anything about animals, plants, or nature! 🌱",
+  greeting,
   maxMessages = 10,
   onLimitReached,
+  locale = 'en',
 }: ChatBotProps): JSX.Element {
+  const messages_ = getChatMessages(locale);
+  const initialGreeting = greeting || messages_.greeting;
+
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: greeting, timestamp: new Date() },
+    { role: 'assistant', content: initialGreeting, timestamp: new Date() },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Determine text direction based on locale
+  const isRTL = locale === 'ur';
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -65,24 +77,31 @@ export default function ChatBot({
     setMessageCount((prev) => prev + 1);
 
     try {
-      // Call chatbot API
+      // Call chatbot API with locale and sessionId
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: input.trim(),
+          locale,
+          ...(sessionId && { sessionId }),
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        throw new Error(data.error?.message || 'Failed to get response');
       }
 
-      const data = await response.json();
+      // Store sessionId from response for subsequent requests
+      if (data.data?.sessionId) {
+        setSessionId(data.data.sessionId);
+      }
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.response || 'Sorry, I couldn\'t understand that. Can you ask in a different way?',
+        content: data.data?.response || messages_.fallbackSafeResponse,
         timestamp: new Date(),
       };
 
@@ -92,7 +111,7 @@ export default function ChatBot({
 
       const errorMessage: Message = {
         role: 'assistant',
-        content: 'Oops! Something went wrong. Please try asking your question again!',
+        content: messages_.errorGeneric,
         timestamp: new Date(),
       };
 
@@ -113,6 +132,7 @@ export default function ChatBot({
   return (
     <div
       className="chatbot-container"
+      dir={isRTL ? 'rtl' : 'ltr'}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -136,10 +156,12 @@ export default function ChatBot({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '1.5rem' }}>🤖</span>
-          <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>Science Helper</span>
+          <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+            {messages_.uiTitle}
+          </span>
         </div>
         <div style={{ fontSize: '0.9rem' }}>
-          {remainingMessages} questions left
+          {remainingMessages} {messages_.uiQuestionsLeft}
         </div>
       </div>
 
@@ -174,6 +196,7 @@ export default function ChatBot({
                 color: message.role === 'user' ? 'white' : 'var(--ifm-font-color-base)',
                 fontSize: '1rem',
                 lineHeight: '1.5',
+                textAlign: isRTL ? 'right' : 'left',
               }}
             >
               {message.content}
@@ -191,7 +214,7 @@ export default function ChatBot({
                 fontSize: '1rem',
               }}
             >
-              <span className="loading-dots">Thinking</span>
+              <span className="loading-dots">{messages_.uiThinking}</span>
               <style>{`
                 .loading-dots::after {
                   content: '...';
@@ -218,14 +241,18 @@ export default function ChatBot({
           borderTop: '1px solid var(--ifm-color-emphasis-300)',
           display: 'flex',
           gap: '0.5rem',
+          flexDirection: isRTL ? 'row-reverse' : 'row',
         }}
       >
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={isLimitReached ? 'Question limit reached' : 'Ask a science question...'}
+          placeholder={
+            isLimitReached ? messages_.uiPlaceholderLimitReached : messages_.uiPlaceholder
+          }
           disabled={isLoading || isLimitReached}
+          dir={isRTL ? 'rtl' : 'ltr'}
           style={{
             flex: 1,
             padding: '0.75rem',
@@ -233,6 +260,7 @@ export default function ChatBot({
             borderRadius: '8px',
             border: '2px solid var(--ifm-color-emphasis-300)',
             outline: 'none',
+            textAlign: isRTL ? 'right' : 'left',
           }}
           maxLength={500}
         />
@@ -254,7 +282,7 @@ export default function ChatBot({
               !input.trim() || isLoading || isLimitReached ? 'not-allowed' : 'pointer',
           }}
         >
-          {isLoading ? '...' : 'Ask'}
+          {isLoading ? '...' : messages_.uiSendButton}
         </button>
       </form>
 
@@ -270,7 +298,7 @@ export default function ChatBot({
             color: 'var(--ifm-color-emphasis-900)',
           }}
         >
-          You've reached the question limit for this session. Great questions! Keep exploring the lessons! 🌟
+          {messages_.uiLimitReachedMessage}
         </div>
       )}
     </div>

@@ -115,6 +115,8 @@ export type VideoCreate = z.infer<typeof VideoCreateSchema>;
 // Chat Validation
 // ============================================================================
 
+export const LocaleSchema = z.enum(['en', 'ur']);
+
 export const ChatMessageSchema = z.object({
   message: z
     .string()
@@ -122,8 +124,10 @@ export const ChatMessageSchema = z.object({
     .max(500, 'Message must be 500 characters or less')
     .trim(),
   sessionId: z.string().uuid('Invalid session ID').optional(),
+  locale: LocaleSchema.optional().default('en'),
 });
 
+export type Locale = z.infer<typeof LocaleSchema>;
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 // ============================================================================
@@ -174,9 +178,9 @@ export function safeValidate<T extends z.ZodTypeAny>(
  * @returns Array of error messages
  */
 export function formatValidationErrors(error: z.ZodError): string[] {
-  return error.errors.map((err) => {
-    const path = err.path.join('.');
-    return `${path}: ${err.message}`;
+  return error.issues.map((issue) => {
+    const path = issue.path.join('.');
+    return `${path}: ${issue.message}`;
   });
 }
 

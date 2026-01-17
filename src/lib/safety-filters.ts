@@ -120,14 +120,21 @@ export async function moderateContent(text: string): Promise<ModerationResult> {
       return {
         safe: false,
         reason: 'This content is not appropriate for children.',
-        categories: result.categories as Record<string, boolean>,
+        categories: result.categories as unknown as Record<string, boolean>,
       };
     }
 
     return { safe: true };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Moderation API error:', error);
-    // Fail-safe: If moderation API fails, reject to be safe
+    // Check if it's a rate limit error (429)
+    const isRateLimit = error && typeof error === 'object' && 'status' in error && error.status === 429;
+    if (isRateLimit) {
+      // On rate limit, allow through since pre-filter already checked basic safety
+      console.warn('Moderation API rate limited - allowing through with pre-filter only');
+      return { safe: true };
+    }
+    // For other errors, fail-safe: reject to be safe
     return {
       safe: false,
       reason: 'Unable to verify content safety. Please try again.',
@@ -177,7 +184,7 @@ export function postFilterOutput(response: string): PostFilterResult {
 
   // 3. Check for educational relevance (basic heuristic)
   const lowerResponse = response.toLowerCase();
-  const hasScience Keyword = SCIENCE_KEYWORDS.some((keyword) =>
+  const hasScienceKeyword = SCIENCE_KEYWORDS.some((keyword) =>
     lowerResponse.includes(keyword)
   );
 

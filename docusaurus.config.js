@@ -17,7 +17,13 @@ const config = {
   projectName: 'science-textbook-grade-1',
 
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+
+  // Markdown configuration
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
+  },
 
   // i18n configuration for bilingual support (English and Urdu)
   i18n: {
@@ -112,6 +118,15 @@ config.plugins = [
               '@lib': path.resolve(__dirname, 'src/lib'),
               '@api': path.resolve(__dirname, 'src/api'),
             },
+          },
+          devServer: {
+            proxy: [
+              {
+                context: ['/api'],
+                target: 'http://localhost:3001',
+                changeOrigin: true,
+              },
+            ],
           },
         };
       },
